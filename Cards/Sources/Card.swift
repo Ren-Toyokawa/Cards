@@ -13,51 +13,27 @@ import UIKit
 
 @objc public protocol CardDelegate {
     
-    @objc optional func cardDidTapInside(card: Card)
-    @objc optional func cardWillShowDetailView(card: Card)
-    @objc optional func cardDidShowDetailView(card: Card)
-    @objc optional func cardWillCloseDetailView(card: Card)
-    @objc optional func cardDidCloseDetailView(card: Card)
-    @objc optional func cardIsShowingDetail(card: Card)
-    @objc optional func cardIsHidingDetail(card: Card)
-    @objc optional func cardDetailIsScrolling(card: Card)
+    @objc optional func cardDidTapInside(card: CardBase)
+    @objc optional func cardWillShowDetailView(card: CardBase)
+    @objc optional func cardDidShowDetailView(card: CardBase)
+    @objc optional func cardWillCloseDetailView(card: CardBase)
+    @objc optional func cardDidCloseDetailView(card: CardBase)
+    @objc optional func cardIsShowingDetail(card: CardBase)
+    @objc optional func cardIsHidingDetail(card: CardBase)
+    @objc optional func cardDetailIsScrolling(card: CardBase)
     
     @objc optional func cardHighlightDidTapButton(card: CardHighlight, button: UIButton)
     @objc optional func cardPlayerDidPlay(card: CardPlayer)
     @objc optional func cardPlayerDidPause(card: CardPlayer)
 }
 
-@IBDesignable open class Card: UIView, CardDelegate {
+
+
+
+@IBDesignable open class Card:CardBase,CardDelegate{
     
-    // Storyboard Inspectable vars
-    /**
-     Color for the card's labels.
-     */
-    @IBInspectable public var textColor: UIColor = UIColor.black
-    /**
-     Amount of blur for the card's shadow.
-     */
-    @IBInspectable public var shadowBlur: CGFloat = 14 {
-        didSet{
-            self.layer.shadowRadius = shadowBlur
-        }
-    }
-    /**
-     Alpha of the card's shadow.
-     */
-    @IBInspectable public var shadowOpacity: Float = 0.6 {
-        didSet{
-            self.layer.shadowOpacity = shadowOpacity
-        }
-    }
-    /**
-     Color of the card's shadow.
-     */
-    @IBInspectable public var shadowColor: UIColor = UIColor.gray {
-        didSet{
-            self.layer.shadowColor = shadowColor.cgColor
-        }
-    }
+    public var backgroundIV = UIImageView()
+    
     /**
      The image to display in the background.
      */
@@ -66,22 +42,7 @@ import UIKit
             self.backgroundIV.image = backgroundImage
         }
     }
-    /**
-     Corner radius of the card.
-     */
-    @IBInspectable public var cardRadius: CGFloat = 20{
-        didSet{
-            self.layer.cornerRadius = cardRadius
-        }
-    }
-    /**
-     Insets between card's content and edges ( in percentage )
-     */
-    @IBInspectable public var contentInset: CGFloat = 6 {
-        didSet {
-            insets = LayoutHelper(rect: originalFrame).X(contentInset)
-        }
-    }
+    
     /**
      Color of the card's background.
      */
@@ -91,7 +52,11 @@ import UIKit
             if backgroundColor != UIColor.clear { backgroundColor = UIColor.clear }
         }
     }
+    
+    
+    
     /**
+     Todo: Move this to CardBase. But should resolve detailVC.card = self
      contentViewController  -> The view controller to present when the card is tapped
      from                   -> Your current ViewController (self)
      */
@@ -105,28 +70,7 @@ import UIKit
             detailVC.isFullscreen = fullscreen
         }
     }
-    /**
-     If the card should display parallax effect.
-     */
-    public var hasParallax: Bool = true {
-        didSet {
-            if self.motionEffects.isEmpty && hasParallax { goParallax() }
-            else if !hasParallax && !motionEffects.isEmpty { motionEffects.removeAll() }
-        }
-    }
-    /**
-     Delegate for the card. Should extend your VC with CardDelegate.
-     */
-    public var delegate: CardDelegate?
     
-    //Private Vars
-    fileprivate var tap = UITapGestureRecognizer()
-    fileprivate var detailVC = DetailViewController()
-    weak var superVC: UIViewController?
-    var originalFrame = CGRect.zero
-    public var backgroundIV = UIImageView()
-    public var insets = CGFloat()
-    var isPresenting = false
     
     //MARK: - View Life Cycle
     
@@ -146,18 +90,18 @@ import UIKit
         self.addGestureRecognizer(tap)
         tap.delegate = self
         tap.cancelsTouchesInView = false
-       
+        
         detailVC.transitioningDelegate = self
         
         // Adding Subviews
-        self.addSubview(backgroundIV)
-        
-        backgroundIV.isUserInteractionEnabled = true
-        
-        if backgroundIV.backgroundColor == nil {
-            backgroundIV.backgroundColor = UIColor.white
-            super.backgroundColor = UIColor.clear
-        }
+        //        self.addSubview(backgroundIV)
+        //
+        //        backgroundIV.isUserInteractionEnabled = true
+        //
+        //        if backgroundIV.backgroundColor == nil {
+        //            backgroundIV.backgroundColor = UIColor.white
+        //            super.backgroundColor = UIColor.clear
+        //        }
     }
     
     override open func draw(_ rect: CGRect) {
@@ -170,13 +114,13 @@ import UIKit
         self.layer.shadowRadius = shadowBlur
         self.layer.cornerRadius = cardRadius
         
-        backgroundIV.image = backgroundImage
-        backgroundIV.layer.cornerRadius = self.layer.cornerRadius
-        backgroundIV.clipsToBounds = true
-        backgroundIV.contentMode = .scaleAspectFill
-        
-        backgroundIV.frame.origin = bounds.origin
-        backgroundIV.frame.size = CGSize(width: bounds.width, height: bounds.height)
+        //        backgroundIV.image = backgroundImage
+        //        backgroundIV.layer.cornerRadius = self.layer.cornerRadius
+        //        backgroundIV.clipsToBounds = true
+        //        backgroundIV.contentMode = .scaleAspectFill
+        //
+        //        backgroundIV.frame.origin = bounds.origin
+        //        backgroundIV.frame.size = CGSize(width: bounds.width, height: bounds.height)
         contentInset = 6
     }
     
@@ -198,7 +142,7 @@ import UIKit
             resetAnimated()
         }
     }
-
+    
     
     //MARK: - Animations
     
@@ -231,7 +175,7 @@ import UIKit
 }
 
 
-    //MARK: - Transition Delegate
+//MARK: - Transition Delegate
 
 extension Card: UIViewControllerTransitioningDelegate {
     
@@ -245,7 +189,7 @@ extension Card: UIViewControllerTransitioningDelegate {
     
 }
 
-    //MARK: - Gesture Delegate
+//MARK: - Gesture Delegate
 
 extension Card: UIGestureRecognizerDelegate {
     
@@ -265,6 +209,79 @@ extension Card: UIGestureRecognizerDelegate {
         
         pushBackAnimated()
     }
+}
+
+@IBDesignable open class CardBase: UIView{
+    
+    // Storyboard Inspectable vars
+    /**
+     Color for the card's labels.
+     */
+    @IBInspectable public var textColor: UIColor = UIColor.black
+    /**
+     Amount of blur for the card's shadow.
+     */
+    @IBInspectable public var shadowBlur: CGFloat = 14 {
+        didSet{
+            self.layer.shadowRadius = shadowBlur
+        }
+    }
+    /**
+     Alpha of the card's shadow.
+     */
+    @IBInspectable public var shadowOpacity: Float = 0.6 {
+        didSet{
+            self.layer.shadowOpacity = shadowOpacity
+        }
+    }
+    /**
+     Color of the card's shadow.
+     */
+    @IBInspectable public var shadowColor: UIColor = UIColor.gray {
+        didSet{
+            self.layer.shadowColor = shadowColor.cgColor
+        }
+    }
+    /**
+     Corner radius of the card.
+     */
+    @IBInspectable public var cardRadius: CGFloat = 20{
+        didSet{
+            self.layer.cornerRadius = cardRadius
+        }
+    }
+    /**
+     Insets between card's content and edges ( in percentage )
+     */
+    @IBInspectable public var contentInset: CGFloat = 6 {
+        didSet {
+            insets = LayoutHelper(rect: originalFrame).X(contentInset)
+        }
+    }
+    /**
+     If the card should display parallax effect.
+     */
+    public var hasParallax: Bool = true {
+        didSet {
+            if self.motionEffects.isEmpty && hasParallax { goParallax() }
+            else if !hasParallax && !motionEffects.isEmpty { motionEffects.removeAll() }
+        }
+    }
+    /**
+     Delegate for the card. Should extend your VC with CardDelegate.
+     */
+    public var delegate: CardDelegate?
+    
+    //Private Vars
+    fileprivate var tap = UITapGestureRecognizer()
+    fileprivate var detailVC = DetailViewController()
+    
+    weak var superVC: UIViewController?
+    var originalFrame = CGRect.zero
+    public var insets = CGFloat()
+    var isPresenting = false
+    
+    
 }
 
 
